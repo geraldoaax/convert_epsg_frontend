@@ -23,14 +23,29 @@ const MapComponent = () => {
   }, []);
 
   useEffect(() => {
-    if (coordinates.length === 0) return;
+    if (coordinates.length === 0) {
+      console.log("No coordinates provided.");
+      return;
+    }
 
-    console.log("Coordinates for heatmap:", coordinates); // Log the coordinates
+    console.log("Coordinates:", coordinates);
+
+    // Check the format of the first coordinate
+    const firstCoord = coordinates[0];
+    if (
+      !firstCoord ||
+      !Array.isArray(firstCoord.coordinates) ||
+      firstCoord.coordinates.length !== 2 ||
+      typeof firstCoord.signal !== "number"
+    ) {
+      console.error("Invalid coordinate format:", firstCoord);
+      return;
+    }
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/satellite-v9",
-      center: coordinates[0].coordinates,
+      center: firstCoord.coordinates,
       zoom: 9,
     });
 
@@ -47,7 +62,7 @@ const MapComponent = () => {
         })),
       };
 
-      console.log("GeoJSON data for heatmap:", geojsonData); // Log the GeoJSON data
+      console.log("GeoJSON data:", geojsonData);
 
       map.addSource("heatmap-source", {
         type: "geojson",
@@ -58,35 +73,38 @@ const MapComponent = () => {
         id: "heatmap",
         type: "heatmap",
         source: "heatmap-source",
-        // ... rest of the heatmap properties ...
+        paint: {
+          // ... heatmap properties ...
+        },
       });
     });
 
     return () => map.remove();
   }, [coordinates]);
 
-  const Legend = () => (
+  const SignalLegend = () => (
     <div className="legend">
+      <h5>Qualidade do Sinal</h5>
       <div className="legend-item">
         <div
           className="legend-color"
           style={{ backgroundColor: "rgb(178,24,43)" }}
         ></div>
-        Strong Signal
+        Forte ( Maior -60 dBm)
       </div>
       <div className="legend-item">
         <div
           className="legend-color"
           style={{ backgroundColor: "rgb(239,138,98)" }}
         ></div>
-        Moderate Signal
+        Moderado (-60 a -75 dBm)
       </div>
       <div className="legend-item">
         <div
           className="legend-color"
           style={{ backgroundColor: "rgb(253,219,199)" }}
         ></div>
-        Weak Signal
+        Fraco ( Menor -75 dBm)
       </div>
     </div>
   );
@@ -94,7 +112,7 @@ const MapComponent = () => {
   return (
     <div>
       <div ref={mapContainerRef} style={{ width: "100%", height: "600px" }} />
-      <Legend />
+      <SignalLegend />
     </div>
   );
 };
